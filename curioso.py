@@ -1,57 +1,119 @@
 import streamlit as st
-import cv2
-import numpy as np
-import mediapipe as mp
-from PIL import Image, ImageDraw, ImageFont
 
-# Configurar página
-st.set_page_config(page_title="Anatomía Humana", layout="centered")
-st.title("Explorador de Anatomía Humana")
+st.set_page_config(page_title="Aprende Python - Bucles y Condicionales", layout="centered")
 
-# Subida de imagen
-uploaded_file = st.file_uploader("Sube una imagen de cuerpo humano:", type=["jpg", "png", "jpeg"])
+st.title("🐍 Aprende Python: `while`, `for` e `if`")
+st.markdown("""
+Bienvenido a esta mini lección interactiva. A continuación se explica el uso de los principales constructores de control en Python:
+""")
 
-if uploaded_file is not None:
-    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    image = cv2.imdecode(file_bytes, 1)
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+with st.expander("🔄 Bucle `while`"):
+    st.code("""
+i = 0
+while i < 5:
+    print(i)
+    i += 1
+""", language='python')
+    st.markdown("El bucle `while` repite un bloque mientras una condición sea verdadera.")
 
-    st.image(image_rgb, caption="Imagen original", use_column_width=True)
+with st.expander("🔁 Bucle `for`"):
+    st.code("""
+for i in range(5):
+    print(i)
+""", language='python')
+    st.markdown("El bucle `for` itera sobre una secuencia como `range`, listas, etc.")
 
-    # MediaPipe Pose
-    mp_pose = mp.solutions.pose
-    pose = mp_pose.Pose(static_image_mode=True)
-    results = pose.process(image_rgb)
+with st.expander("✅ Condicional `if`"):
+    st.code("""
+x = 10
+if x > 5:
+    print("Mayor que 5")
+elif x == 5:
+    print("Es igual a 5")
+else:
+    print("Menor que 5")
+""", language='python')
+    st.markdown("`if`, `elif` y `else` permiten tomar decisiones basadas en condiciones.")
 
-    if results.pose_landmarks:
-        annotated_image = image_rgb.copy()
-        draw = ImageDraw.Draw(Image.fromarray(annotated_image))
+---
 
-        # Diccionario de puntos claves (ejemplo limitado)
-        partes = {
-            "Cabeza": mp_pose.PoseLandmark.NOSE,
-            "Hombro derecho": mp_pose.PoseLandmark.RIGHT_SHOULDER,
-            "Hombro izquierdo": mp_pose.PoseLandmark.LEFT_SHOULDER,
-            "Cadera": mp_pose.PoseLandmark.LEFT_HIP,
-            "Rodilla izquierda": mp_pose.PoseLandmark.LEFT_KNEE,
-            "Rodilla derecha": mp_pose.PoseLandmark.RIGHT_KNEE,
-        }
+### 📝 Quiz Interactivo
 
-        pil_image = Image.fromarray(annotated_image)
-        draw = ImageDraw.Draw(pil_image)
-        font = ImageFont.load_default()
+st.header("🧠 Quiz: ¿Cuánto sabes de Python?")
+st.markdown("Selecciona la respuesta correcta en cada pregunta:")
 
-        for nombre, landmark_enum in partes.items():
-            landmark = results.pose_landmarks.landmark[landmark_enum]
-            x = int(landmark.x * image.shape[1])
-            y = int(landmark.y * image.shape[0])
-            
-            # Dibujar caja negra con texto amarillo
-            text_size = draw.textsize(nombre, font=font)
-            box = (x, y, x + text_size[0] + 10, y + text_size[1] + 10)
-            draw.rectangle(box, fill="black")
-            draw.text((x + 5, y + 5), nombre, fill="yellow", font=font)
+# Preguntas y respuestas
+questions = [
+    {
+        "question": "¿Cuál es la salida de: `i=0; while i<3: print(i); i+=1`?",
+        "options": ["0 1 2", "1 2 3", "0 1 2 3"],
+        "answer": "0 1 2"
+    },
+    {
+        "question": "¿Qué función se usa comúnmente con `for` para iterar un número fijo de veces?",
+        "options": ["range()", "enumerate()", "repeat()"],
+        "answer": "range()"
+    },
+    {
+        "question": "¿Cuál es la sintaxis correcta de un `if`?",
+        "options": ["if x > 5 then:", "if (x > 5):", "if x > 5:"],
+        "answer": "if x > 5:"
+    },
+    {
+        "question": "¿Qué imprime: `for i in range(2): print(i)`?",
+        "options": ["0 1", "1 2", "0 1 2"],
+        "answer": "0 1"
+    },
+    {
+        "question": "¿Qué operador se usa para 'igual a' en condiciones?",
+        "options": ["=", "==", "==="],
+        "answer": "=="
+    },
+    {
+        "question": "¿Qué hace `i += 1`?",
+        "options": ["Incrementa i en 1", "Asigna 1 a i", "Decrementa i en 1"],
+        "answer": "Incrementa i en 1"
+    },
+    {
+        "question": "¿Cuándo se usa `else`?",
+        "options": ["Cuando la condición es falsa", "Cuando es verdadera", "Cuando empieza un bucle"],
+        "answer": "Cuando la condición es falsa"
+    },
+    {
+        "question": "¿Qué palabra se usa para romper un bucle antes de que termine?",
+        "options": ["exit", "stop", "break"],
+        "answer": "break"
+    },
+    {
+        "question": "¿Cuál de estos es un bucle infinito?",
+        "options": ["while True:", "for i in range(10):", "if True:"],
+        "answer": "while True:"
+    },
+    {
+        "question": "¿Cuál es la salida de `if 3 > 2: print('Sí')`?",
+        "options": ["Sí", "No", "Error"],
+        "answer": "Sí"
+    }
+]
 
-        st.image(pil_image, caption="Partes del cuerpo detectadas", use_column_width=True)
+# Estado de respuestas
+user_answers = []
+score = 0
+
+for i, q in enumerate(questions):
+    st.subheader(f"Pregunta {i + 1}")
+    user_answer = st.radio(q["question"], q["options"], key=f"q{i}")
+    user_answers.append(user_answer)
+
+# Verificación de puntaje
+if st.button("✅ Verificar puntaje"):
+    score = sum(user_answers[i] == questions[i]["answer"] for i in range(len(questions)))
+    st.success(f"Puntaje: {score} / {len(questions)}")
+
+    if score == len(questions):
+        st.balloons()
+        st.markdown("🎉 ¡Excelente! Has respondido todo correctamente.")
+    elif score >= 7:
+        st.markdown("👍 ¡Muy bien! Aún puedes mejorar un poco.")
     else:
-        st.warning("No se detectaron puntos de referencia en la imagen. Asegúrate de que sea una imagen clara de una persona de cuerpo entero.")
+        st.markdown("📘 Sigue practicando para mejorar tu comprensión.")
