@@ -1,57 +1,76 @@
 import streamlit as st
-import cv2
-import numpy as np
-import mediapipe as mp
-from PIL import Image, ImageDraw, ImageFont
+import random
 
-# Configurar página
-st.set_page_config(page_title="Anatomía Humana", layout="centered")
-st.title("Explorador de Anatomía Humana")
+# Base de datos simplificada de partes y subpartes
+anatomia = {
+    "corazón": [
+        "Aurícula derecha",
+        "Aurícula izquierda",
+        "Ventrículo derecho",
+        "Ventrículo izquierdo",
+        "Válvula tricúspide",
+        "Válvula mitral",
+        "Aorta",
+        "Arteria pulmonar"
+    ],
+    "cerebro": [
+        "Lóbulo frontal",
+        "Lóbulo parietal",
+        "Lóbulo temporal",
+        "Lóbulo occipital",
+        "Cerebelo",
+        "Tronco encefálico",
+        "Hipotálamo"
+    ],
+    "ojo": [
+        "Córnea",
+        "Cristalino",
+        "Iris",
+        "Pupila",
+        "Retina",
+        "Nervio óptico",
+        "Esclerótica"
+    ]
+}
 
-# Subida de imagen
-uploaded_file = st.file_uploader("Sube una imagen de cuerpo humano:", type=["jpg", "png", "jpeg"])
+# Función para generar acrónimo mnemotécnico
+def generar_acronimo(subpartes):
+    letras_iniciales = [parte[0].upper() for parte in subpartes]
+    acronimo = "".join(letras_iniciales)
+    return acronimo
 
-if uploaded_file is not None:
-    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    image = cv2.imdecode(file_bytes, 1)
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+def generar_frase_mnemonica(subpartes):
+    letras = [parte[0].upper() for parte in subpartes]
+    palabras_ejemplo = {
+        "A": "Amigos", "B": "Bailan", "C": "Con", "D": "Diversión", "E": "En",
+        "F": "Fiestas", "G": "Grandes", "H": "Hoy", "I": "Intensamente",
+        "J": "Juegan", "K": "Koalas", "L": "Locamente", "M": "Mientras",
+        "N": "Nadan", "O": "Observan", "P": "Peces", "Q": "Quemando",
+        "R": "Ríos", "S": "Soleados", "T": "Trepan", "U": "Unas",
+        "V": "Velas", "W": "Wafles", "X": "Xilófonos", "Y": "Yogures", "Z": "Zambullen"
+    }
+    frase = " ".join([palabras_ejemplo.get(letra, letra) for letra in letras])
+    return frase
 
-    st.image(image_rgb, caption="Imagen original", use_column_width=True)
+# Interfaz Streamlit
+st.set_page_config(page_title="Anatomía + Memotecnia", layout="centered")
+st.title("🧠 Aplicativo de Anatomía con Técnicas Mnemotécnicas")
 
-    # MediaPipe Pose
-    mp_pose = mp.solutions.pose
-    pose = mp_pose.Pose(static_image_mode=True)
-    results = pose.process(image_rgb)
+parte = st.text_input("Ingresa una parte del cuerpo humano (ej. corazón, cerebro, ojo):").strip().lower()
 
-    if results.pose_landmarks:
-        annotated_image = image_rgb.copy()
-        draw = ImageDraw.Draw(Image.fromarray(annotated_image))
+if parte:
+    if parte in anatomia:
+        subpartes = anatomia[parte]
+        st.subheader(f"🫀 Subpartes de {parte.capitalize()}:")
+        for i, sub in enumerate(subpartes, 1):
+            st.write(f"{i}. {sub}")
 
-        # Diccionario de puntos claves (ejemplo limitado)
-        partes = {
-            "Cabeza": mp_pose.PoseLandmark.NOSE,
-            "Hombro derecho": mp_pose.PoseLandmark.RIGHT_SHOULDER,
-            "Hombro izquierdo": mp_pose.PoseLandmark.LEFT_SHOULDER,
-            "Cadera": mp_pose.PoseLandmark.LEFT_HIP,
-            "Rodilla izquierda": mp_pose.PoseLandmark.LEFT_KNEE,
-            "Rodilla derecha": mp_pose.PoseLandmark.RIGHT_KNEE,
-        }
+        st.subheader("🧩 Acrónimo mnemotécnico:")
+        acronimo = generar_acronimo(subpartes)
+        st.code(acronimo)
 
-        pil_image = Image.fromarray(annotated_image)
-        draw = ImageDraw.Draw(pil_image)
-        font = ImageFont.load_default()
-
-        for nombre, landmark_enum in partes.items():
-            landmark = results.pose_landmarks.landmark[landmark_enum]
-            x = int(landmark.x * image.shape[1])
-            y = int(landmark.y * image.shape[0])
-            
-            # Dibujar caja negra con texto amarillo
-            text_size = draw.textsize(nombre, font=font)
-            box = (x, y, x + text_size[0] + 10, y + text_size[1] + 10)
-            draw.rectangle(box, fill="black")
-            draw.text((x + 5, y + 5), nombre, fill="yellow", font=font)
-
-        st.image(pil_image, caption="Partes del cuerpo detectadas", use_column_width=True)
+        st.subheader("💡 Frase mnemotécnica sugerida:")
+        frase = generar_frase_mnemonica(subpartes)
+        st.success(frase)
     else:
-        st.warning("No se detectaron puntos de referencia en la imagen. Asegúrate de que sea una imagen clara de una persona de cuerpo entero.")
+        st.warning("Esa parte del cuerpo no está en la base de datos. Prueba con: corazón, cerebro u ojo.")
